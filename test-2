@@ -1,0 +1,215 @@
+-- Mobile-Friendly GUI Framework 2025
+-- Works in any Roblox game you own or in Studio
+-- Fully touch-optimized with floating buttons, swipe support, and scalable UI
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Detect if on mobile/tablet
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- Create main ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MobileUtilityGUI"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+-- Floating Open/Close Button (always visible on mobile)
+local openButton = Instance.new("TextButton")
+openButton.Size = UDim2.new(0, 70, 0, 70)
+openButton.Position = UDim2.new(1, -90, 0.5, -35)
+openButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+openButton.BorderSizePixel = 0
+openButton.Text = "☰"
+openButton.TextColor3 = Color3.new(1, 1, 1)
+openButton.TextScaled = true
+openButton.Font = Enum.Font.GothamBold
+openButton.BackgroundTransparency = 0.3
+openButton.Parent = screenGui
+
+-- Make it rounded
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(0, 35)
+openCorner.Parent = openButton
+
+-- Draggable for mobile
+local dragging = false
+local dragStart, startPos
+
+openButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = openButton.Position
+    end
+end)
+
+openButton.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+        local delta = input.Position - dragStart
+        openButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+openButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Main Frame (starts hidden)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 380, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -190, 0.5, -250)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 16)
+frameCorner.Parent = mainFrame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(100, 100, 255)
+frameStroke.Thickness = 3
+frameStroke.Parent = mainFrame
+
+-- Title Bar
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 60)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+titleBar.Text = "Mobile Utility Menu"
+titleBar.TextColor3 = Color3.new(1, 1, 1)
+titleBar.TextScaled = true
+titleBar.Font = Enum.Font.GothamBold
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 16)
+titleCorner.Parent = titleBar
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 50, 0, 50)
+closeBtn.Position = UDim2.new(1, -60, 0, 5)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1, 0.5, 0.5)
+closeBtn.TextScaled = true
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = mainFrame
+
+-- Scrolling Frame for content
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -20, 1, -80)
+scrollingFrame.Position = UDim2.new(0, 10, 0, 70)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 800)
+scrollingFrame.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 12)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = scrollingFrame
+
+-- Toggle UI Function
+local isOpen = false
+local function toggleUI()
+    isOpen = not isOpen
+    mainFrame.Visible = isOpen
+    
+    local goal = isOpen and {BackgroundTransparency = 0} or {BackgroundTransparency = 1}
+    local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), goal)
+    tween:Play()
+end
+
+openButton.MouseButton1Click:Connect(toggleUI)
+closeBtn.MouseButton1Click:Connect(toggleUI)
+
+-- Example Buttons (you can add as many as you want)
+local function createButton(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 80)
+    btn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+    btn.Text = name
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.Gotham
+    btn.Parent = scrollingFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(callback)
+    
+    -- Hover effect
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+    end)
+end
+
+-- Add your real features here (100% safe examples)
+createButton("Heal Player", function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.Health = player.Character.Humanoid.MaxHealth
+    end
+end)
+
+createButton("Teleport to Spawn", function()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)
+    end
+end)
+
+createButton("Rainbow Character", function()
+    if player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                spawn(function()
+                    while wait(0.1) do
+                        if not part.Parent then break end
+                        part.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+createButton("Show Touch Controls", function()
+    -- Works great on mobile
+    local touchGui = Instance.new("ScreenGui")
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 300, 0, 100)
+    label.Position = UDim2.new(0.5, -150, 0.1, 0)
+    label.BackgroundTransparency = 0.5
+    label.BackgroundColor3 = Color3.new(0, 0, 0)
+    label.Text = "Touch Controls Active!"
+    label.TextScaled = true
+    label.TextColor3 = Color3.new(0, 1, 0)
+    label.Parent = touchGui
+    touchGui.Parent = playerGui
+    
+    wait(3)
+    touchGui:Destroy()
+end)
+
+-- Auto-resize for mobile
+if isMobile then
+    mainFrame.Size = UDim2.new(0, 360, 0, 600)
+    mainFrame.Position = UDim2.new(0.5, -180, 0.5, -300)
+end
+
+print("Mobile GUI Loaded! Tap the ☰ button to open.")
