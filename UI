@@ -1,0 +1,99 @@
+-- Simple Toggleable UI with ImGui (2025 executor compatible)
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Change this key to whatever you want (Insert is default)
+local ToggleKey = Enum.KeyCode.Insert
+
+-- ImGui variables
+local WindowOpen = true
+
+-- Create the window
+local function CreateUI()
+    local GUI = Instance.new("ScreenGui")
+    GUI.Name = "SimpleToggleUI"
+    GUI.ResetOnSpawn = false
+    GUI.Parent = game:GetService("CoreGui")
+
+    -- ImGui window
+    local Window = ImGui:CreateWindow({
+        Title = "My Cool Script 😎",
+        Size = UDim2.fromOffset(400, 300),
+        Position = UDim2.fromScale(0.3, 0.3),
+        Closable = false,
+        Collapsible = true
+    })
+
+    -- Main tab
+    local MainTab = Window:AddTab({ Name = "Main" })
+
+    -- Example controls
+    MainTab:AddLabel("Welcome, " .. LocalPlayer.DisplayName .. "!")
+
+    local FlyEnabled = false
+    MainTab:AddToggle({
+        Name = "Fly (F)",
+        Callback = function(state)
+            FlyEnabled = state
+            print("Fly:", state and "ON" or "OFF")
+            -- Put your fly script here when true
+        end
+    })
+
+    local SpeedValue = 50
+    MainTab:AddSlider({
+        Name = "WalkSpeed",
+        Min = 16,
+        Max = 300,
+        Value = SpeedValue,
+        Callback = function(value)
+            SpeedValue = value
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = value
+            end
+        end
+    })
+
+    MainTab:AddButton({
+        Name = "Teleport to Spawn",
+        Callback = function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = game:GetService("Workspace"):FindFirstChild("SpawnLocation").CFrame + Vector3.new(0, 5, 0)
+            end
+        end
+    })
+
+    MainTab:AddButton({
+        Name = "Exit",
+        Callback = function()
+            GUI:Destroy()
+        end
+    })
+
+    -- Toggle with Insert key
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.KeyCode == ToggleKey and not gameProcessed then
+            WindowOpen = not WindowOpen
+            Window:SetVisible(WindowOpen)
+        end
+    end)
+
+    -- Optional: Right-click mouse to toggle too
+    Mouse.Button2Down:Connect(function()
+        WindowOpen = not WindowOpen
+        Window:SetVisible(WindowOpen)
+    end)
+end
+
+-- Run it
+CreateUI()
+
+-- Notification
+game.StarterGui:SetCore("SendNotification", {
+    Title = "UI Loaded!";
+    Text = "Press INSERT or RIGHT-CLICK to toggle";
+    Duration = 5;
+})
